@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LUXEVAULT • Timeless Luxury</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Inter:wght@300;400;500;600&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .heading { font-family: 'Playfair Display', serif; }
+    .gold { color: #d4af37; }
+    .product-card { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+    .product-card:hover { transform: translateY(-20px) scale(1.03); }
+    .custom-cursor { display: none; }
+  </style>
+</head>
+<body class="bg-zinc-950 text-white overflow-x-hidden">
+
+  <!-- NAVBAR -->
+  <nav class="fixed top-0 w-full bg-zinc-950/90 backdrop-blur-lg border-b border-white/10 z-50">
+    <div class="max-w-7xl mx-auto px-6 py-5 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 bg-gradient-to-br from-amber-300 to-yellow-500 rounded-full flex items-center justify-center text-black text-4xl font-bold">L</div>
+        <span class="heading text-4xl tracking-tighter">LUXEVAULT</span>
+      </div>
+      <div class="hidden md:flex gap-10 text-sm uppercase tracking-widest">
+        <a href="#shop" class="hover:gold">SHOP</a>
+        <a href="#3d" class="hover:gold">3D EXPERIENCE</a>
+        <a href="#" class="hover:gold">COLLECTIONS</a>
+        <a href="#" class="hover:gold">JOURNAL</a>
+      </div>
+      <div class="flex items-center gap-6">
+        <i onclick="toggleSearch()" class="fas fa-search text-2xl cursor-pointer hover:gold"></i>
+        <i onclick="toggleCart()" class="fas fa-shopping-bag text-2xl cursor-pointer relative hover:gold">
+          <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-[10px] w-5 h-5 rounded-full flex items-center justify-center">0</span>
+        </i>
+      </div>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <header class="min-h-screen pt-28 flex items-center relative">
+    <div class="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+      <div>
+        <h1 class="heading text-6xl md:text-7xl leading-none tracking-tighter mb-6">
+          TIMELESS<br>LUXURY<br><span class="gold">IN MOTION</span>
+        </h1>
+        <p class="text-xl text-zinc-400">Premium ecommerce with real 3D models, golden particles, shader effects, cart, and more.</p>
+        <button onclick="document.getElementById('shop').scrollIntoView({behavior:'smooth'})" 
+                class="mt-10 px-12 py-6 bg-white text-black rounded-3xl hover:bg-amber-300 text-lg font-medium">
+          SHOP NOW
+        </button>
+      </div>
+      <div id="hero-3d" class="w-full h-96 md:h-[520px] bg-black rounded-3xl border border-amber-300/30"></div>
+    </div>
+  </header>
+
+  <!-- 3D INTERACTIVE SECTION -->
+  <section id="3d" class="py-24 bg-black">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="heading text-5xl text-center mb-12">Interactive 3D Product Viewer</h2>
+      <div id="product-3d" class="w-full h-[520px] bg-zinc-900 rounded-3xl border border-amber-300/30 mx-auto max-w-4xl"></div>
+    </div>
+  </section>
+
+  <!-- SHOP -->
+  <section id="shop" class="py-24 bg-zinc-900">
+    <div class="max-w-7xl mx-auto px-6">
+      <h2 class="heading text-5xl mb-12">Signature Collection</h2>
+      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-8" id="products-grid"></div>
+    </div>
+  </section>
+
+  <!-- CART DRAWER -->
+  <div id="cart-drawer" class="fixed inset-y-0 right-0 w-full md:w-96 bg-zinc-900 shadow-2xl translate-x-full transition-transform duration-500 z-50 overflow-auto">
+    <div class="p-6">
+      <div class="flex justify-between mb-8">
+        <h2 class="heading text-3xl">Your Luxury Bag</h2>
+        <i onclick="toggleCart()" class="fas fa-times text-3xl cursor-pointer"></i>
+      </div>
+      <div id="cart-items" class="space-y-6"></div>
+      <div class="mt-10 pt-6 border-t border-white/20">
+        <div class="flex justify-between text-2xl mb-8">
+          <span>Total</span>
+          <span id="cart-total" class="gold">$0</span>
+        </div>
+        <button onclick="checkout()" class="w-full py-6 bg-white text-black rounded-3xl text-lg font-medium hover:bg-amber-300">COMPLETE PURCHASE</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Products
+    const productsList = [
+      { id: 1, name: "Cashmere Oversized Hoodie", price: 129, img: "https://picsum.photos/id/1015/600/600", category: "Fashion" },
+      { id: 2, name: "Bamboo Insulated Tumbler", price: 39, img: "https://picsum.photos/id/201/600/600", category: "Home" },
+      { id: 3, name: "Vitamin C Clinical Serum", price: 68, img: "https://picsum.photos/id/301/600/600", category: "Beauty" },
+      { id: 4, name: "Premium Noise Cancelling Earbuds", price: 129, img: "https://picsum.photos/id/367/600/600", category: "Tech" }
+    ];
+
+    let cart = JSON.parse(localStorage.getItem('luxecart')) || [];
+
+    function saveCart() {
+      localStorage.setItem('luxecart', JSON.stringify(cart));
+      document.getElementById('cart-count').textContent = cart.length;
+    }
+
+    function renderProducts() {
+      const grid = document.getElementById('products-grid');
+      grid.innerHTML = '';
+      productsList.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'product-card bg-zinc-800 rounded-3xl overflow-hidden cursor-pointer';
+        card.innerHTML = `
+          <img src="${p.img}" class="w-full h-64 object-cover">
+          <div class="p-6">
+            <p class="text-amber-300 text-xs">${p.category}</p>
+            <h3 class="text-xl mt-2">${p.name}</h3>
+            <p class="text-3xl gold mt-3">$${p.price}</p>
+            <button onclick="addToCart(${p.id}); event.stopImmediatePropagation()" 
+                    class="mt-6 w-full py-4 bg-white text-black rounded-2xl hover:bg-amber-300">Add to Bag</button>
+          </div>
+        `;
+        card.onclick = () => alert(`Opening 3D view for ${p.name}`);
+        grid.appendChild(card);
+      });
+    }
+
+    function addToCart(id) {
+      const item = productsList.find(p => p.id === id);
+      cart.push(item);
+      saveCart();
+      playSound();
+      alert(`${item.name} added to your luxury bag ✨`);
+    }
+
+    function renderCart() {
+      const container = document.getElementById('cart-items');
+      let total = 0;
+      container.innerHTML = '';
+      cart.forEach((item, i) => {
+        total += item.price;
+        const div = document.createElement('div');
+        div.className = "flex gap-4";
+        div.innerHTML = `
+          <img src="${item.img}" class="w-20 h-20 object-cover rounded-2xl">
+          <div class="flex-1">
+            <p>${item.name}</p>
+            <p class="gold">$${item.price}</p>
+          </div>
+          <button onclick="removeFromCart(${i})" class="text-red-400">×</button>
+        `;
+        container.appendChild(div);
+      });
+      document.getElementById('cart-total').textContent = '$' + total;
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      saveCart();
+      renderCart();
+    }
+
+    function toggleCart() {
+      const drawer = document.getElementById('cart-drawer');
+      drawer.style.transform = drawer.style.transform === 'translateX(0px)' ? 'translateX(100%)' : 'translateX(0)';
+      if (drawer.style.transform === 'translateX(0px)') renderCart();
+    }
+
+    function checkout() {
+      if (cart.length === 0) return alert("Your bag is empty");
+      alert("Thank you for shopping at LUXEVAULT!\nThis is a full demo.");
+      cart = [];
+      saveCart();
+      toggleCart();
+    }
+
+    function toggleSearch() {
+      alert("Search activated (Demo)");
+    }
+
+    function playSound() {
+      try {
+        const audio = new Audio('https://freesound.org/data/previews/66/66929_931655-lq.mp3');
+        audio.volume = 0.3;
+        audio.play();
+      } catch(e) {}
+    }
+
+    // 3D Scenes
+    function create3DScene(containerId, isHero = true) {
+      const container = document.getElementById(containerId);
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(50, container.clientWidth / container.clientHeight, 0.1, 100);
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      container.appendChild(renderer.domElement);
+
+      scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+      const light = new THREE.PointLight(0xd4af37, 2.8);
+      light.position.set(8, 10, 8);
+      scene.add(light);
+
+      // Main Object
+      const geo = isHero ? new THREE.TorusKnotGeometry(1.8, 0.6, 140, 32) : new THREE.SphereGeometry(1.8, 64, 64);
+      const mat = new THREE.MeshPhongMaterial({
+        color: 0x111111,
+        shininess: 100,
+        specular: 0xd4af37,
+        emissive: 0x1a1a1a
+      });
+      const mesh = new THREE.Mesh(geo, mat);
+      scene.add(mesh);
+
+      // Golden Particles
+      const count = 800;
+      const positions = new Float32Array(count * 3);
+      for (let i = 0; i < count * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 15;
+        positions[i+1] = (Math.random() - 0.5) * 15;
+        positions[i+2] = (Math.random() - 0.5) * 15;
+      }
+      const pGeo = new THREE.BufferGeometry();
+      pGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const pMat = new THREE.PointsMaterial({ size: 0.07, color: 0xd4af37, transparent: true, blending: THREE.AdditiveBlending });
+      const particles = new THREE.Points(pGeo, pMat);
+      scene.add(particles);
+
+      camera.position.z = 7;
+
+      function animate() {
+        requestAnimationFrame(animate);
+        mesh.rotation.y += 0.004;
+        mesh.rotation.x += 0.002;
+        particles.rotation.y += 0.0008;
+        renderer.render(scene, camera);
+      }
+      animate();
+    }
+
+    // Initialize everything
+    window.onload = () => {
+      renderProducts();
+      saveCart();
+      create3DScene('hero-3d', true);
+      create3DScene('product-3d', false);
+      
+      console.log('%cLUXEVAULT Full Demo Loaded ✨ All features active', 'color:#d4af37; font-size:16px');
+    };
+  </script>
+</body>
+  </html>
